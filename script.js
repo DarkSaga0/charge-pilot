@@ -1,6 +1,6 @@
 // ⚠️ ÖNEMLİ: API KEY'İNİZİ BURAYA EKLEYIN
 // https://openchargemap.org/site/profile/edit adresinden API key alın
-const OCM_API_KEY = '479ff18c-ad6d-4559-9025-f6375c702d88'; // ← API key'inizi buraya yapıştırın
+const OCM_API_KEY = '479ff18c-ad6d-4559-9025-f6375c702d88'; // Open Charge Map API Key
 
 // Global değişkenler
 let map;
@@ -13,13 +13,13 @@ let currentRadius = 20; // km
 function initMap() {
     // Harita oluştur
     map = L.map('map').setView([currentLat, currentLng], 11);
-
+    
     // Tile layer ekle (OpenStreetMap)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
-
+    
     // İlk yükleme
     loadChargingStations(currentLat, currentLng, currentRadius);
 }
@@ -28,35 +28,35 @@ function initMap() {
 async function loadChargingStations(lat, lng, radius) {
     // Yükleniyor göster
     showLoading(true);
-
+    
     // API URL'i oluştur
     const url = `https://api.openchargemap.io/v3/poi/?output=json&latitude=${lat}&longitude=${lng}&distance=${radius}&distanceunit=km&maxresults=100&compact=true&verbose=false&key=${OCM_API_KEY}`;
-
+    
     try {
         const response = await fetch(url);
-
+        
         if (!response.ok) {
             throw new Error(`API Hatası: ${response.status}`);
         }
-
+        
         const data = await response.json();
-
+        
         // Mevcut marker'ları temizle
         clearMarkers();
-
+        
         // Yeni marker'ları ekle
         data.forEach(station => {
             addStationMarker(station);
         });
-
+        
         // İstatistikleri güncelle
         updateStats(data.length);
-
+        
         console.log(`✅ ${data.length} şarj istasyonu yüklendi`);
-
+        
     } catch (error) {
         console.error('❌ Veri yüklenirken hata:', error);
-
+        
         // API key kontrolü
         if (OCM_API_KEY === 'BURAYA_API_KEY_YAPISTIRINIZ') {
             alert('⚠️ Lütfen script.js dosyasındaki OCM_API_KEY değişkenine API key\'inizi ekleyin!\n\nAPI key almak için: https://openchargemap.org/site/profile/edit');
@@ -71,18 +71,18 @@ async function loadChargingStations(lat, lng, radius) {
 // Haritaya istasyon marker'ı ekle
 function addStationMarker(station) {
     const addressInfo = station.AddressInfo;
-
+    
     if (!addressInfo || !addressInfo.Latitude || !addressInfo.Longitude) {
         return; // Koordinat yoksa atla
     }
-
+    
     // Marker oluştur
     const marker = L.marker([addressInfo.Latitude, addressInfo.Longitude]).addTo(map);
-
+    
     // Popup içeriği oluştur
     const popupContent = createPopupContent(station);
     marker.bindPopup(popupContent);
-
+    
     // Marker'ı listeye ekle
     markers.push(marker);
 }
@@ -91,7 +91,7 @@ function addStationMarker(station) {
 function createPopupContent(station) {
     const addr = station.AddressInfo;
     const connections = station.Connections || [];
-
+    
     // Bağlantı tipleri
     let connectionsHTML = '';
     if (connections.length > 0) {
@@ -104,11 +104,11 @@ function createPopupContent(station) {
         });
         connectionsHTML += '</ul></div>';
     }
-
+    
     // Durum bilgisi
     const status = station.StatusType?.Title || 'Durum bilinmiyor';
     const statusClass = station.StatusType?.IsOperational ? 'status-operational' : 'status-unknown';
-
+    
     return `
         <div class="station-popup">
             <h3>${addr.Title || 'Şarj İstasyonu'}</h3>
@@ -165,17 +165,17 @@ function getUserLocation() {
         alert('Tarayıcınız konum servislerini desteklemiyor.');
         return;
     }
-
+    
     showLoading(true);
-
+    
     navigator.geolocation.getCurrentPosition(
         (position) => {
             currentLat = position.coords.latitude;
             currentLng = position.coords.longitude;
-
+            
             // Haritayı kullanıcı konumuna getir
             map.setView([currentLat, currentLng], 13);
-
+            
             // Kullanıcı konumu marker'ı ekle
             L.marker([currentLat, currentLng], {
                 icon: L.icon({
@@ -187,7 +187,7 @@ function getUserLocation() {
                     shadowSize: [41, 41]
                 })
             }).addTo(map).bindPopup('📍 Sizin Konumunuz').openPopup();
-
+            
             // Şarj istasyonlarını yükle
             loadChargingStations(currentLat, currentLng, currentRadius);
         },
@@ -211,24 +211,24 @@ function updateRadius() {
 async function searchLocation() {
     const searchInput = document.getElementById('searchInput');
     const query = searchInput.value.trim();
-
+    
     if (!query) {
         alert('Lütfen bir konum girin');
         return;
     }
-
+    
     showLoading(true);
-
+    
     try {
         // Nominatim API (OpenStreetMap geocoding)
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
         const results = await response.json();
-
+        
         if (results.length > 0) {
             const location = results[0];
             currentLat = parseFloat(location.lat);
             currentLng = parseFloat(location.lon);
-
+            
             map.setView([currentLat, currentLng], 12);
             loadChargingStations(currentLat, currentLng, currentRadius);
         } else {
@@ -248,6 +248,6 @@ function scrollToMap() {
 }
 
 // Sayfa yüklendiğinde haritayı başlat
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     initMap();
 });
